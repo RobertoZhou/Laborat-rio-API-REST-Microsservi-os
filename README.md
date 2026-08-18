@@ -1,2 +1,189 @@
-# Laboratório-API-REST-Microsserviços
+# 1. Visão geral do laboratório
 
+Neste laboratório você vai construir o primeiro microsserviço da solução** MyTracker**: o **`ms-task`**. O objetivo é compreender, na prática, como uma API REST é organizada em uma aplicação Spring Boot.
+
+Nesta primeira versão os dados ficarão **somente em memória**. Ainda não utilizaremos banco de dados, Docker, Kubernetes, mensageria ou segurança. Esses recursos serão incorporados progressivamente nas próximas aulas.
+
+### Ao final você terá
+
+* uma aplicação Spring Boot executando localmente;
+* um recurso **`Task`** representando tarefas do MyTracker;
+* uma camada **`Service`** com as operações da aplicação;
+* uma camada **`Controller`** expondo uma API REST;
+* endpoints **`GET`**, **`POST`**, **`PUT`** e **`DELETE`**;
+* testes manuais usando IntelliJ HTTP Client, Postman ou Insomnia.
+
+### Arquitetura desta versão
+
+```text
+Cliente HTTP
+     |
+     v
+TaskController
+     |
+     v
+ TaskService
+     |
+     v
+List<Task> / memória
+```
+
+**Importante:** uma API Spring Boot isolada não caracteriza, por si só, uma arquitetura completa de microsserviços. Hoje construiremos um serviço com uma responsabilidade de negócio bem definida. Nas próximas aulas ele será conteinerizado, distribuído e integrado aos demais componentes da arquitetura Cloud Native.
+
+Se quiser comparar seu projeto com a implementação de referência, acesse: [ms-task no GitLab](https://gitlab.com/gilbriatore/2026/backend/my-tracker/ms-task/-/tree/lab-01).
+
+Para clonar:
+
+```bash
+git clone --branch lab-01 https://gitlab.com/gilbriatore/2026/backend/my-tracker/ms-task.git
+```
+
+## 2. Definir o contexto e a API
+
+O MyTracker possui diferentes capacidades funcionais: tarefas, hábitos, finanças, dashboard e usuários. Neste laboratório vamos trabalhar apenas com o contexto de** Gestão de Tarefas**.
+
+### Recurso principal
+
+Uma tarefa será representada inicialmente pelos seguintes dados:
+
+```json
+{
+  "id": 1,
+  "titulo": "Estudar Cloud Computing",
+  "descricao": "Revisar APIs REST e microsserviços",
+  "prioridade": "ALTA",
+  "concluida": false
+}
+```
+
+### Endpoints que serão implementados
+
+* **`GET /tasks`** — listar todas as tarefas;
+* **`GET /tasks/{id}`** — consultar uma tarefa;
+* **`POST /tasks`** — cadastrar uma tarefa;
+* **`PUT /tasks/{id}`** — atualizar uma tarefa;
+* **`DELETE /tasks/{id}`** — excluir uma tarefa.
+
+Observe que a URL representa o **recurso** e o método HTTP representa a **operação**. Não criamos URLs como **`/criarTask`** ou **`/deletarTask`**.
+
+
+## 3. Criar o projeto Spring Boot
+
+No IntelliJ IDEA selecione **New Project → Spring Boot** e utilize o Spring Initializr para criar a aplicação.
+
+### Configuração sugerida
+
+* **Language:** Java
+* **Type:** Maven
+* **Group:** **`br.mytracker`**
+* **Artifact:** **`ms-task`**
+* **Package:** **`br.mytracker.mstask`**
+* **JDK / Java:** 17 ou superior
+* **Packaging:** Jar
+
+### Dependências
+
+Adicione apenas:
+
+* **Spring Web** — criação dos endpoints HTTP;
+* **Spring Boot DevTools** — apoio ao desenvolvimento.
+
+O **Spring Boot Starter Test** normalmente já é incluído pelo Initializr.
+
+### O que não adicionar ainda
+
+Não adicione JPA, H2, MySQL, Docker, Kubernetes, RabbitMQ, Spring Security ou qualquer mecanismo de Service Discovery. O objetivo desta aula é manter a solução mínima.
+
+
+## 4. Organizar os pacotes
+
+Dentro de **`src/main/java/br/mytracker/mstask`**, crie os pacotes abaixo.
+
+```text
+br.mytracker.mstask
+├── controller
+├── domain
+├── service
+└── repository   # ficará vazio nesta aula
+```
+
+A classe **`TaskServiceApplication`** deve permanecer no pacote raiz **`br.mytracker.mstask`**. Dessa forma o Spring encontra automaticamente os componentes definidos nos subpacotes.
+
+### Responsabilidade das camadas
+
+* **domain:** conceitos e objetos do contexto;
+* **controller:** entrada e saída HTTP;
+* **service:** regras e operações da aplicação;
+* **repository:** acesso à persistência — será utilizado em outro momento.
+
+
+## 5. Criar o domínio `Task`
+
+Crie o arquivo **`src/main/java/br/mytracker/task/domain/Task.java`**.
+
+```java
+package br.mytracker.mstask.domain;
+
+public class Task {
+
+    private Long id;
+    private String titulo;
+    private String descricao;
+    private String prioridade;
+    private boolean concluida;
+
+    public Task() {
+    }
+
+    public Task(Long id, String titulo, String descricao,
+                String prioridade, boolean concluida) {
+        this.id = id;
+        this.titulo = titulo;
+        this.descricao = descricao;
+        this.prioridade = prioridade;
+        this.concluida = concluida;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
+    public String getPrioridade() {
+        return prioridade;
+    }
+
+    public void setPrioridade(String prioridade) {
+        this.prioridade = prioridade;
+    }
+
+    public boolean isConcluida() {
+        return concluida;
+    }
+
+    public void setConcluida(boolean concluida) {
+        this.concluida = concluida;
+    }
+}
+```
+
+O Spring/Jackson utilizará os getters e setters para converter automaticamente objetos Java em JSON e JSON em objetos Java.
