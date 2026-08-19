@@ -322,3 +322,115 @@ public class TaskController {
 * **`@GetMapping`**, **`@PostMapping`**, **`@PutMapping`** e **`@DeleteMapping`** — associam métodos Java aos verbos HTTP;
 * **`@PathVariable`** — lê valores presentes na URL;
 * **`@RequestBody`** — converte o JSON recebido em um objeto Java.
+
+
+## 8. Configurar e executar
+
+Confirme a classe principal gerada pelo Spring Initializr:
+
+```java
+package br.mytracker.mstask;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class TaskServiceApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(TaskServiceApplication.class, args);
+    }
+}
+```
+
+Em **`src/main/resources/application.properties`**:
+
+```properties
+spring.application.name=ms-task
+server.port=8080
+```
+
+Execute a classe **`TaskServiceApplication`** pelo IntelliJ. Quando o servidor iniciar, teste no navegador ou cliente HTTP:
+
+```text
+http://localhost:8080/tasks
+```
+
+Na primeira execução a resposta esperada é **`[]`**, pois nenhuma tarefa foi cadastrada.
+
+
+## 9. Testar o CRUD REST
+
+Você pode usar o **HTTP Client do IntelliJ**, Postman ou Insomnia. Crie um arquivo **`requests.http`** na raiz do projeto se quiser usar o IntelliJ.
+
+```http
+### Listar tarefas
+GET http://localhost:8080/tasks
+Accept: application/json
+
+### Criar tarefa
+POST http://localhost:8080/tasks
+Content-Type: application/json
+
+{
+  "titulo": "Estudar Cloud Computing",
+  "descricao": "Revisar APIs REST e microsserviços",
+  "prioridade": "ALTA",
+  "concluida": false
+}
+
+### Buscar tarefa 1
+GET http://localhost:8080/tasks/1
+Accept: application/json
+
+### Atualizar tarefa 1
+PUT http://localhost:8080/tasks/1
+Content-Type: application/json
+
+{
+  "titulo": "Estudar Cloud Computing",
+  "descricao": "Finalizar o laboratório de API REST",
+  "prioridade": "MEDIA",
+  "concluida": true
+}
+
+### Excluir tarefa 1
+DELETE http://localhost:8080/tasks/1
+```
+
+### Códigos HTTP esperados
+
+* **200 OK** — consulta ou atualização realizada;
+* **201 Created** — tarefa cadastrada;
+* **204 No Content** — tarefa excluída;
+* **404 Not Found** — ID inexistente.
+
+
+## 10. Adapte o laboratório ao cenário da sua equipe
+
+Agora não copie o **`ms-task`**. Escolha um contexto funcional do sistema definido pela sua equipe e replique os mesmos conceitos.
+
+### Passo a passo
+
+1. Identifique uma funcionalidade de negócio candidata ao microsserviço.
+2. Defina um recurso principal e seus atributos.
+3. Defina os endpoints REST do recurso.
+4. Crie um projeto Spring Boot independente.
+5. Implemente **`domain`**, **`service`** e **`controller`**.
+6. Mantenha os objetos em memória.
+7. Teste **`GET`**, **`POST`**, **`PUT`** e **`DELETE`**.
+8. Versione o código no repositório da equipe.
+9. Relacione o trabalho realizado às Tasks técnicas do Azure Boards.
+
+### Checklist de conclusão
+
+* [ ] Aplicação inicia sem erros.
+* [ ] O contexto do serviço está claro.
+* [ ] GET lista os recursos.
+* [ ] POST cria um recurso e retorna 201.
+* [ ] PUT atualiza um recurso.
+* [ ] DELETE remove um recurso e retorna 204.
+* [ ] ID inexistente retorna 404.
+* [ ] Código foi versionado.
+
+**Próxima evolução:** na aula de Docker esse mesmo serviço será empacotado em uma imagem e executado em um contêiner. Não descarte o projeto criado hoje.
